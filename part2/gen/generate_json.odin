@@ -1,7 +1,8 @@
 
-package computer_enhance_part2_hw
+package computer_enhance_part2_hw_gen
 
 import "core:os"
+import "core:flags"
 import "core:math/rand"
 import "core:encoding/json"
 import "core:fmt"
@@ -14,7 +15,7 @@ Pairs :: struct {
     pairs: []Entry,
 }
 
-generate_json :: proc(pair_count: int, path: string) {   
+generate_json :: proc(pair_count: int, fd: os.Handle) {   
     random_coord :: proc() -> f64 {
         return rand.float64_range(-180, 180)
     }
@@ -35,13 +36,16 @@ generate_json :: proc(pair_count: int, path: string) {
     }
     data, err := json.marshal(pairs, opt)
     assert(err == nil)
-    os.write_entire_file(path, data)
+    os.write(fd, data)
+}
+
+Options :: struct {
+    output_file: os.Handle `args:"pos=0,required,file=wct" usage:"Output json file."`,
+    pair_count: int        `args:"pos=1,required"          usage:"Number of pairs to generate"`,
 }
 
 main :: proc() {
-    counts := []int {100, 1000, 10000, 100000, 1000000}
-    for c in counts {
-        path := fmt.tprintf("test_data_{}.json", c)
-        generate_json(c, path)
-    }
+    opt: Options
+    flags.parse_or_exit(&opt, os.args)
+    generate_json(opt.pair_count, opt.output_file)
 }
